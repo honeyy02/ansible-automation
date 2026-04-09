@@ -1,0 +1,78 @@
+---
+- name: Copy jar file to S3 bucket and push it to GitHub
+  hosts: localhost
+
+  tasks:
+    - name: Copy Jar to S3 Bucket
+      command: >
+        aws s3 cp ./my-app-1.0-SNAPSHOT1.jar s3://jarbucket2402/my-app-1.0-SNAPSHOT1.jar
+        --region us-east-1
+      register: s3_upload
+
+    - name: S3 upload ID
+      debug:
+        msg: "ID {{ s3_upload }}"
+
+    - name: Clone the repo
+      git:
+        repo: 'https://github.com/honeyy02/Ansible_assignment.git'
+        dest: './Ansible_assignment'
+        version: main
+        force: yes
+        update: yes
+
+    - name: Set up Git user details
+      command: git config user.name "honeyy02"
+      args:
+        chdir: './Ansible_assignment'
+
+    - name: Set up Git email
+      command: git config user.email "honeysharma20095@acropolis.in"
+      args:
+        chdir: './Ansible_assignment'
+
+    - name: Copy file to git repo
+      copy:
+        src: './my-app-1.0-SNAPSHOT1.jar'
+        dest: './Ansible_assignment/my-app-1.0-SNAPSHOT1.jar'
+
+    - name: Check git status
+      command: git status --porcelain
+      args:
+        chdir: './Ansible_assignment'
+      register: git_status
+      changed_when: false
+
+    - name: Debug git status
+      debug:
+        msg: "Git status: {{ git_status.stdout }}"
+
+    - name: Add file to git
+      command:
+        cmd: git add my-app-1.0-SNAPSHOT1.jar
+        chdir: './Ansible_assignment'
+      when: git_status.stdout != ""
+
+    - name: Commit the changes
+      command:
+        cmd: git commit -m "Added JAR file by Jenkins pipeline"
+        chdir: './Ansible_assignment'
+      when: git_status.stdout != ""
+      register: commit_result
+
+    - name: Check if commit was successful
+      debug:
+        msg: "Commit result: {{ commit_result.stdout }}"
+      when: git_status.stdout != ""
+
+    - name: Push the changes to the remote repository
+      shell: |
+        git push https://{{ lookup('env', 'GIT_USERNAME') }}:{{ lookup('env', 'GIT_TOKEN') }}@github.com/honeyy02/Ansible_assignment.git main
+      args:
+        chdir: './Ansible_assignment'
+      when: git_status.stdout != ""
+
+    - name: Notify if no changes were committed
+      debug:
+        msg: "No changes to commit."
+      when: git_status.stdout == ""
