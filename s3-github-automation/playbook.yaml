@@ -1,0 +1,42 @@
+---
+- name: Copy jar file to S3 bucket and push it to github
+  hosts: localhost
+
+  tasks:
+  - name: Copy Jar to S3 Bucket
+    command: >
+        aws s3 cp ./my-app-1.0-SNAPSHOT.jar s3://jarbucket2402/my-app-1.0-SNAPSHOT.jar
+        --region us-east-1
+    register: s3_upload
+
+  - name: S3 upload ID
+    debug:
+      msg: " ID {{s3_upload}}"
+
+
+  - name: clone the repo
+    git:
+      repo: 'git@github.com:honeyy02/ansible-automation.git'
+      dest: './Ansible_assignment'
+      version: main
+      force: yes
+      update: yes
+
+  - name: Copy file to git repo
+    copy:
+      src: './jar-file/my-app-1.0-SNAPSHOT.jar'
+      dest: './Ansible_assignment/my-app-1.0-SNAPSHOT.jar'
+
+  - name: Add file to git
+    command:
+      cmd: git add my-app-1.0-SNAPSHOT.jar
+      chdir: './Ansible_assignment'
+
+  - name: Commit the changes
+    command:
+        cmd: git commit -m "Added JAR file"
+        chdir: './Ansible_assignment' 
+  - name: Push the changes to the remote repository
+    command:
+        cmd: git push origin main
+        chdir: './Ansible_assignment'  
