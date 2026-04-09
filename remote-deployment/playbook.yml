@@ -1,0 +1,16 @@
+---
+- name: Deploy and Run Python Application
+  hosts: ansible_node
+  become: yes
+  become_method: sudo
+  vars_files:
+    - /etc/ansible/vault.yml
+  tasks:
+    - name: Copy Python file to the remote node
+      copy:
+        src: python_jenkins.py
+        dest:  /home/ansiblenode
+        mode: '0755'
+
+    - name: Execute the Python script on the remote node
+      command: python3 python_jenkins.py
