@@ -15,7 +15,7 @@
 
     - name: Clone the repo
       git:
-        repo: 'https://github.com/honeyy02/Ansible_assignment.git'
+        repo: 'https://github.com/honeyy02/ansible-automation.git'
         dest: './Ansible_assignment'
         version: main
         force: yes
